@@ -5,6 +5,7 @@ import time
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pathlib import Path
 
+import git
 import termcolor
 from aocd.examples import Example, Page
 from aocd.get import most_recent_year, current_day
@@ -75,16 +76,31 @@ def initialize_day(puz: Puzzle):
     return True
 
 
-def print_answer(name: str, actual: str, expected: str):
+def print_answer(name: str, actual: str, expected: str, already_solved: bool = False):
     actual = actual or ""
     good = expected and actual.strip() == expected.strip()
-    icon = "✅" if good else "⛔"
-    msg = f"answer: {yellow(repr(actual))}"
-    if not good:
-        if expected:
-            msg += f", expected {yellow(repr(expected))}"
+    if good:
+        if already_solved:
+            icon = "👑"
         else:
-            msg += " (wrong)"
+            icon = "✅"
+    else:
+        if not actual:
+            icon = "❗"
+        else:
+            icon = "⛔"
+
+    if actual:
+        msg = f"answer: {yellow(repr(actual))}"
+        if not good:
+            if expected:
+                msg += f", expected {yellow(repr(expected))}"
+            else:
+                msg += " (wrong)"
+        elif already_solved:
+            msg += " (already solved)"
+    else:
+        msg = "answer was empty"
     print(f'  {icon}  {cyan(name)} {msg}')
     return good
 
@@ -152,6 +168,7 @@ def main():
 
     if args.submit:
         print(f'Submitting answers')
+        repo = git.Repo(SOLUTIONS_ROOT.parent)
         answer_a, answer_b = solver(year=puz.year, day=puz.day, data=puz.input_data)
         answers = [
             (answer_a, 'answer_a'),
@@ -160,16 +177,9 @@ def main():
 
         for idx, (actual, expected_attr) in enumerate(answers, start=1):
             expected = getattr(puz, expected_attr, None)
-            if expected:
-                if actual:
-                    print_answer(f'Part {idx}', actual, expected)
-                else:
-                    print(f'  ℹ️  Part {idx} answer: {expected!r} (already solved)')
 
-                continue
-
-            if not actual:
-                print(f'  ❗  Part {idx} answer was empty')
+            if expected or not actual:
+                print_answer(f'Part {idx}', actual, expected, already_solved=True)
                 continue
 
             from aocd.post import submit
@@ -182,6 +192,8 @@ def main():
 
             time.sleep(1.5)
             update_text(puz)
+            repo.git.add('-A')
+            repo.git.commit('-m', f'Solved {puz.year}/{puz.day:02} part {idx}')
 
 
 def aocd_plugin(year, day, data):

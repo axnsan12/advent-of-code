@@ -1,5 +1,9 @@
+# for framework
 advent-of-code-data>=2.0.1
 markdownify
+termcolor
+gitpython
+
+# for solutions
 regex
 more-itertools
-termcolor
