@@ -1,7 +1,10 @@
+import functools
 import shutil
+import sys
 from argparse import ArgumentParser
 from pathlib import Path
 
+import termcolor
 from aocd.examples import Example, Page
 from aocd.get import most_recent_year, current_day
 from aocd.models import Puzzle
@@ -9,6 +12,10 @@ from aocd.utils import get_plugins
 from markdownify import markdownify
 
 SOLUTIONS_ROOT = Path(__file__).parent
+
+magenta = functools.partial(termcolor.colored, color='magenta')
+yellow = functools.partial(termcolor.colored, color='yellow')
+cyan = functools.partial(termcolor.colored, color='cyan')
 
 
 def get_number_from_dir_name(path: Path):
@@ -70,13 +77,14 @@ def print_answer(name: str, actual: str, expected: str):
     actual = actual or ""
     good = expected and actual.strip() == expected.strip()
     icon = "✅" if good else "⛔"
-    msg = f"answer: {actual!r}"
+    msg = f"answer: {yellow(repr(actual))}"
     if not good:
         if expected:
-            msg += f", expected {expected!r}"
+            msg += f", expected {yellow(repr(expected))}"
         else:
             msg += " (wrong)"
-    print(f'  {icon}  {name} {msg}')
+    print(f'  {icon}  {cyan(name)} {msg}')
+    return good
 
 
 def main():
@@ -96,24 +104,27 @@ def main():
     parser.add_argument('day', type=int, nargs='?', default=default_day or current_day())
     parser.add_argument('year', type=int, nargs='?', default=default_year or most_recent_year())
 
-    submit_group = parser.add_mutually_exclusive_group(required=True)
-    submit_group.add_argument('-s', '--submit', action='store_true', default=False)
-    submit_group.add_argument('-e', '--example', action='store_true', default=False)
+    parser.add_argument('-s', '--submit', action='store_true', default=False)
+    parser.add_argument('-e', '--example', action='store_true', default=False)
 
     args = parser.parse_args()
 
     puz = Puzzle(year=args.year, day=args.day)
     initialize_day(puz)
     update_text(puz)
+    status = puz.answered_a + puz.answered_b
+
+    print(f'Year {magenta(puz.year)}, Day {magenta(puz.day)}, Parts done: {magenta(status)}/2')
 
     ep, = get_plugins()
     solver = ep.load()
+
+    examples_ok = True
     if args.example:
-        print(f'Running solver for examples')
-        for (idx, e) in enumerate(puz.examples, start=1):
+        print(f'Checking examples')
+        example_idx = 0
+        for e in puz.examples:
             e: Example
-            if e.extra:
-                print(f'!!! Example #{idx} has extra: {e.extra!r}')
             answer_a, answer_b = solver(year=puz.year, day=puz.day, data=e.input_data)
             answers = [
                 (answer_a, e.answer_a),
@@ -124,10 +135,15 @@ def main():
                 if not expected:
                     continue
 
-                print_answer(f'Example #{idx}', actual, expected)
+                example_idx += 1
+                if not print_answer(f'Example #{example_idx}', actual, expected):
+                    examples_ok = False
+
+    if not examples_ok:
+        return 1
 
     if args.submit:
-        print(f'Running solver and submitting answers')
+        print(f'Submitting answers')
         answer_a, answer_b = solver(year=puz.year, day=puz.day, data=puz.input_data)
         answers = [
             (answer_a, 'answer_a'),
@@ -154,7 +170,7 @@ def main():
             expected = getattr(puz, expected_attr, None)
             print_answer(f'Part {idx}', actual, expected)
             if not expected:
-                break
+                return 1
 
 
 def aocd_plugin(year, day, data):
@@ -169,4 +185,4 @@ def aocd_plugin(year, day, data):
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main() or 0)
