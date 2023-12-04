@@ -1,4 +1,5 @@
 # advent-of-code
 
 - `pip install -e .`
-- `aocvj --help`
+- setup credentials for [aocd](https://github.com/wimglenn/advent-of-code-data)
+- run `aocvj --help`

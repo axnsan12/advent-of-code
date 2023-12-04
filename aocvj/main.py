@@ -1,7 +1,7 @@
 import functools
 import shutil
 import sys
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pathlib import Path
 
 import termcolor
@@ -70,6 +70,7 @@ def initialize_day(puz: Puzzle):
             f.write("-" * w)
 
     shutil.copyfile(SOLUTIONS_ROOT / 'solver_template.py', day_dir / 'solver.py')
+    print(f'Created {magenta(day_dir)}')
     return True
 
 
@@ -100,12 +101,16 @@ def main():
                 default_year = get_number_from_dir_name(cwd.parent)
                 default_day = n
 
-    parser = ArgumentParser()
-    parser.add_argument('day', type=int, nargs='?', default=default_day or current_day())
-    parser.add_argument('year', type=int, nargs='?', default=default_year or most_recent_year())
+    parser = ArgumentParser(formatter_class=ArgumentDefaultsHelpFormatter)
+    parser.add_argument('day', type=int, nargs='?', default=default_day or current_day(),
+                        help='day (1-25)')
+    parser.add_argument('year', type=int, nargs='?', default=default_year or most_recent_year(),
+                        help=f'year (2015-{most_recent_year()})')
 
-    parser.add_argument('-s', '--submit', action='store_true', default=False)
-    parser.add_argument('-e', '--example', action='store_true', default=False)
+    parser.add_argument('-s', '--submit', action='store_true', default=False,
+                        help='check solver results for example inputs')
+    parser.add_argument('-e', '--example', action='store_true', default=False,
+                        help='submit answers, or check solver results if answer is already known')
 
     args = parser.parse_args()
 
@@ -115,6 +120,8 @@ def main():
     status = puz.answered_a + puz.answered_b
 
     print(f'Year {magenta(puz.year)}, Day {magenta(puz.day)}, Parts done: {magenta(status)}/2')
+    if not args.example and not args.submit:
+        parser.error('nothing to do! (one of -e, -s is required)')
 
     ep, = get_plugins()
     solver = ep.load()
