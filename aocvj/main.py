@@ -1,6 +1,7 @@
 import functools
 import shutil
 import sys
+import time
 from argparse import ArgumentParser, ArgumentDefaultsHelpFormatter
 from pathlib import Path
 
@@ -178,6 +179,9 @@ def main():
             print_answer(f'Part {idx}', actual, expected)
             if not expected:
                 return 1
+
+            time.sleep(1.5)
+            update_text(puz)
 
 
 def aocd_plugin(year, day, data):
