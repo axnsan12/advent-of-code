@@ -1,0 +1,17 @@
+[project]
+name = "advent-of-code"
+version = "1.0.0"
+dynamic = ["dependencies"]
+
+[build-system]
+requires = ["hatchling", "hatch-requirements-txt"]
+build-backend = "hatchling.build"
+
+[tool.hatch.metadata.hooks.requirements_txt]
+files = ["requirements.txt"]
+
+[project.entry-points."adventofcode.user"]
+cvj = "aocvj.main:aocd_plugin"
+
+[project.scripts]
+aocvj = "aocvj.main:main"
