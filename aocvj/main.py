@@ -45,8 +45,6 @@ def initialize_day(puz: Puzzle):
     except FileExistsError:
         return False
 
-    update_text(puz)
-
     with open(day_dir / 'input.txt', 'w', encoding='utf-8') as f:
         f.write(puz.input_data)
 
@@ -106,6 +104,7 @@ def main():
 
     puz = Puzzle(year=args.year, day=args.day)
     initialize_day(puz)
+    update_text(puz)
 
     ep, = get_plugins()
     solver = ep.load()
@@ -152,9 +151,6 @@ def main():
             setattr(puz, expected_attr, actual)
             expected = getattr(puz, expected_attr, None)
             print_answer(f'Part {idx}', actual, expected)
-
-            if expected:
-                update_text(puz)
 
 
 def aocd_plugin(year, day, data):
