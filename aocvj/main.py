@@ -148,9 +148,13 @@ def main():
                 print(f'  ❗  Part {idx} answer was empty')
                 continue
 
-            setattr(puz, expected_attr, actual)
+            from aocd.post import submit
+            submit(actual, day=puz.day, year=puz.year, reopen=False)
+
             expected = getattr(puz, expected_attr, None)
             print_answer(f'Part {idx}', actual, expected)
+            if not expected:
+                break
 
 
 def aocd_plugin(year, day, data):

@@ -1,3 +1,4 @@
 advent-of-code-data>=2.0.1
 markdownify
 regex
+more-itertools
