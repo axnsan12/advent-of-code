@@ -191,12 +191,13 @@ def main():
             expected = getattr(puz, expected_attr, None)
             print_answer(f'Part {idx}', actual, expected)
             if not expected:
+                update_text(puz)
                 return 1
 
-            time.sleep(1.5)
-            update_text(puz)
             repo.git.add('-A')
             repo.git.commit('-m', f'Solved {puz.year}/{puz.day:02} part {idx}')
+
+        update_text(puz)
 
 
 def aocd_plugin(year, day, data):
