@@ -167,9 +167,12 @@ def main():
         return 1
 
     if args.submit:
-        print(f'Submitting answers')
+        print(f'Submitting answers...', end='', flush=True)
         repo = git.Repo(SOLUTIONS_ROOT.parent)
+        start = time.perf_counter()
         answer_a, answer_b = solver(year=puz.year, day=puz.day, data=puz.input_data)
+        duration = time.perf_counter() - start
+        print(f' solver took {duration:.2f}s')
         answers = [
             (answer_a, 'answer_a'),
             (answer_b, 'answer_b'),
