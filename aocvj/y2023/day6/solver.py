@@ -1,10 +1,15 @@
 import re
+from tqdm import tqdm
 
 
 def solve(data: str) -> tuple[int | str, int | str | None]:
     lines = data.splitlines(keepends=False)
-    times = list(map(int, re.findall(r'(\d+)', lines[0])))
-    distances = list(map(int, re.findall(r'(\d+)', lines[1])))
+    times_str = re.findall(r'(\d+)', lines[0])
+    distances_str = re.findall(r'(\d+)', lines[1])
+    times = list(map(int, times_str))
+    distances = list(map(int, distances_str))
+    time_concat = int(''.join(times_str))
+    distance_concat = int(''.join(distances_str))
 
     answer_a = 1
     for (max_time, distance) in zip(times, distances):
@@ -13,9 +18,15 @@ def solve(data: str) -> tuple[int | str, int | str | None]:
             speed = t
             my_distance = speed * (max_time - t)
             if my_distance > distance:
-                print(f'{t}/{max_time} {my_distance} > {distance}')
                 possible += 1
 
         answer_a *= possible
 
-    return answer_a, None
+    answer_b = 0
+    for t in tqdm(range(1, time_concat)):
+        speed = t
+        my_distance = speed * (time_concat - t)
+        if my_distance > distance_concat:
+            answer_b += 1
+
+    return answer_a, answer_b
