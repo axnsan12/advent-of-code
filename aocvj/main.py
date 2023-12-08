@@ -125,9 +125,11 @@ def main():
                         help=f'year (2015-{most_recent_year()})')
 
     parser.add_argument('-s', '--submit', action='store_true', default=False,
-                        help='check solver results for example inputs')
-    parser.add_argument('-e', '--example', action='store_true', default=False,
                         help='submit answers, or check solver results if answer is already known')
+    parser.add_argument('-e', '--example', action='store_true', default=False,
+                        help='check solver results for example inputs')
+    parser.add_argument('-f', '--file', action='append', default=[], dest='files',
+                        help='custom input file(s)')
 
     args = parser.parse_args()
 
@@ -162,6 +164,22 @@ def main():
                 example_idx += 1
                 if not print_answer(f'Example #{example_idx}', actual, expected):
                     examples_ok = False
+
+    if args.files:
+        for f in args.files:
+            print(f'Checking {f}')
+            f = Path(f)
+            if not f.is_file():
+                print(f'  {yellow(f)} does not exist')
+                examples_ok = False
+                continue
+
+            data = f.read_text(encoding='utf-8')
+            for ans in solver(year=puz.year, day=puz.day, data=data):
+                if ans is None:
+                    continue
+
+                print_answer(f'{f}', ans, ans)
 
     if not examples_ok:
         return 1
