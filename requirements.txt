@@ -8,3 +8,4 @@ tqdm
 # for solutions
 regex
 more-itertools
+matplotlib

@@ -200,7 +200,8 @@ def main():
             expected = getattr(puz, expected_attr, None)
 
             if expected or not actual:
-                print_answer(f'Part {idx}', actual, expected, already_solved=True)
+                if not print_answer(f'Part {idx}', actual, expected, already_solved=True):
+                    return 1
                 continue
 
             from aocd.post import submit

@@ -1,67 +1,76 @@
-PIPE_CHARS = '-|LJ7F'
+import itertools
+
+import matplotlib.path
+import numpy as np
+
+PIPE_CHARS = {
+    '-': ((0, -1), (0, 1)),
+    '|': ((-1, 0), (1, 0)),
+    'L': ((-1, 0), (0, 1)),
+    'J': ((-1, 0), (0, -1)),
+    '7': ((0, -1), (1, 0)),
+    'F': ((0, 1), (1, 0)),
+}
+
+ALL_DIRECTIONS = ((-1, 0), (0, -1), (0, 1), (1, 0))
 
 
-def bfs(grid: list[list[str]], start: tuple[int, int]) -> int:
-    """Breadth-first search"""
-    queue = [start]
-    visited = set()
-    parent = {}
+def detect_start_char_type(grid: list[list[str]], start: tuple[int, int]) -> str:
+    row, col = start
 
-    distance_matrix = [[0] * len(grid[0]) for _ in range(len(grid))]
-    max_dist = 0
-    while queue:
-        node = queue.pop(0)
-        if node in visited:
-            continue
+    steps = []
+    neighbors = ''
+    for dx, dy in ALL_DIRECTIONS:
+        x, y = row + dx, col + dy
+        c = grid[x][y]
+        neighbors += c
+        if c in PIPE_CHARS and (-dx, -dy) in PIPE_CHARS[c]:
+            steps.append((dx, dy))
 
-        visited.add(node)
-        parent_x, parent_y = parent.get(node, node)
-        parent_dist = distance_matrix[parent_x][parent_y]
-        distance_matrix[node[0]][node[1]] = parent_dist + 1
-        max_dist = max(max_dist, parent_dist + 1)
+    assert len(steps) == 2, f'??? {steps}'
+    steps = tuple(sorted(steps))
+    for candidate, candidate_steps in PIPE_CHARS.items():
+        if steps == candidate_steps:
+            return candidate
 
-        c = grid[node[0]][node[1]]
+    raise AssertionError(f'failed to deduce start char type {steps} {neighbors}')
+
+
+def trace_loop(grid: list[list[str]], start: tuple[int, int]) -> list[tuple[int, int]]:
+    nodes = [start]
+    next_node = start
+
+    while True:
+        c = grid[next_node[0]][next_node[1]]
+        if c == 'S':
+            c = detect_start_char_type(grid, next_node)
         if c == '-':
             steps = ((0, 1), (0, -1))
         elif c == '|':
             steps = ((1, 0), (-1, 0))
         elif c == 'L':
             steps = ((-1, 0), (0, 1))
-        elif c == 'J' or c == 'S':  # s hardcoded for input...
+        elif c == 'J':
             steps = ((0, -1), (-1, 0))
         elif c == '7':
             steps = ((0, -1), (1, 0))
         elif c == 'F':
             steps = ((1, 0), (0, 1))
-        elif c == 'S':
-            steps = ((0, 1), (1, 0), (0, -1), (-1, 0))
         else:
             raise ValueError(f'unknown pipe char {c}')
         for dx, dy in steps:
-            x, y = node[0] + dx, node[1] + dy
-            if (x, y) not in visited and grid[x][y] in PIPE_CHARS:
-                queue.append((x, y))
-                parent[(x, y)] = node
+            x, y = next_node[0] + dx, next_node[1] + dy
+            if (x, y) != nodes[-1]:
+                nodes.append(next_node)
+                next_node = (x, y)
+                break
+        else:
+            raise AssertionError(f'failed to find next node {next_node} {steps}')
 
-    for row in range(len(distance_matrix)):
-        for col in range(len(distance_matrix[0])):
-            if distance_matrix[row][col] != 0:
-                num_predecessors = 0
-                num_successors = 0
-                for dx, dy in ((0, 1), (1, 0), (0, -1), (-1, 0)):
-                    x, y = row + dx, col + dy
-                    if distance_matrix[x][y] == distance_matrix[row][col] - 1:
-                        num_predecessors += 1
-                    if distance_matrix[x][y] == distance_matrix[row][col] + 1:
-                        num_successors += 1
+        if next_node == start:
+            break
 
-                window = [''.join(g[col-1:col+2]) for g in grid[row-1:row+2]]
-                distance_window = [d[col-1:col+2] for d in distance_matrix[row-1:row+2]]
-                # if (num_predecessors != 1 or num_successors != 1) and grid[row][col] != 'S':
-                #     print(f'broken loop:\n' + "\n".join(window) + "\n" + "\n".join(map(str, distance_window)))
-                #     raise AssertionError(f'broken loop! {row} {col} @ {window} {distance_window}')
-
-    return max_dist
+    return nodes
 
 
 def solve(data: str) -> tuple[int | str, int | str | None]:
@@ -78,8 +87,28 @@ def solve(data: str) -> tuple[int | str, int | str | None]:
                 break
     assert start is not None, f'failed to find start {grid}'
 
-    answer_a = bfs(grid, start) - 1
-    assert answer_a >= 1, f'??? {answer_a=}'
+    loop_points = trace_loop(grid, start)
+    answer_a = len(loop_points) // 2
+
+    loop_points_set = set(loop_points)
+    other_points = []
+    for row in range(len(grid)):
+        for col in range(len(grid[0])):
+            if (row, col) not in loop_points_set:
+                other_points.append((row, col))
+
+    poly = matplotlib.path.Path(np.array(loop_points))
+    inside_points = [
+        p
+        for p, is_inside
+        in zip(other_points, poly.contains_points(np.array(other_points)))
+        if is_inside
+    ]
+
+    for r, c in inside_points:
+        grid[r][c] = 'X'
     grid_str = '\n'.join(''.join(row) for row in grid)
     print(f'{grid_str}')
-    return answer_a, None
+    answer_b = len(inside_points)
+    assert answer_a >= 1, f'??? {answer_a=}'
+    return answer_a, answer_b
