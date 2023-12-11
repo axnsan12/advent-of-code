@@ -139,8 +139,8 @@ def main():
     status = puz.answered_a + puz.answered_b
 
     print(f'Year {magenta(puz.year)}, Day {magenta(puz.day)}, Parts done: {magenta(status)}/2')
-    if not args.example and not args.submit:
-        parser.error('nothing to do! (one of -e, -s is required)')
+    if not args.example and not args.submit and not args.files:
+        parser.error('nothing to do! (one of -e, -f, -s is required)')
 
     ep, = get_plugins()
     solver = ep.load()
