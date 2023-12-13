@@ -30,7 +30,7 @@ def solve_one(springs: str, nums: tuple[int, ...]) -> int:
             continue
         if '#' in springs[:i]:
             # cannot leave unused springs behind
-            continue
+            break
 
         # looks good! count number of ways to place the rest in the remaining space
         total += solve_one(springs[i + nums[0] + 1:], nums[1:])
