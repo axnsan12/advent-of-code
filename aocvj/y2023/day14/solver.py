@@ -62,7 +62,7 @@ def solve(data: str) -> tuple[int | str, int | str | None]:
     grid_b = grid_np
 
     history = {ndarray_to_tuple(grid_b): 0}
-    target_step = 1_000_000_001
+    target_step = 1_000_000_000
 
     answer_b = None
     for i in range(1, target_step):
@@ -71,11 +71,10 @@ def solve(data: str) -> tuple[int | str, int | str | None]:
         key = ndarray_to_tuple(grid_b)
         loop_start = history.get(key)
         if loop_start is not None:
-            print(f'found loop {i} -> {loop_start}')
             final_idx = (target_step - i) % (i - loop_start) + loop_start
 
             history_inv = {v: k for k, v in history.items()}
-            answer_b = compute_load(history_inv[final_idx - 1])  # no idea why -1
+            answer_b = compute_load(history_inv[final_idx])
             break
 
         history[key] = i
