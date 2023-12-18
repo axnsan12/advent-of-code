@@ -1,53 +1,59 @@
-from collections import defaultdict
+import numpy as np
 
 
-def flood_fill(grid, pos, c):
-    queue = [pos]
-    while queue:
-        x, y = queue.pop()
-        if x < 0 or y < 0 or x >= len(grid) or y >= len(grid[0]):
-            continue
-        if grid[x][y] != '.':
-            continue
-        grid[x][y] = c
-        queue.append((x + 1, y))
-        queue.append((x - 1, y))
-        queue.append((x, y + 1))
-        queue.append((x, y - 1))
+# https://stackoverflow.com/questions/41077185/fastest-way-to-shoelace-formula
+def shoelace(points):
+    n = len(points)
+    n_segments = n - 1
+
+    area = [(points[i + 1][0] - points[i][0]) * (points[i + 1][1] + points[i][1])
+            for i in range(n_segments)]
+
+    return abs(sum(area) / 2.)
+
+
+class Poly:
+    def __init__(self):
+        self.poly = [(0, 0)]
+        self.perimeter = 0
+        self.pos = (0, 0)
+
+    def add(self, direction, dist):
+        if direction == 'R':
+            next_pos = (self.pos[0], self.pos[1] + dist)
+        elif direction == 'L':
+            next_pos = (self.pos[0], self.pos[1] - dist)
+        elif direction == 'U':
+            next_pos = (self.pos[0] - dist, self.pos[1])
+        elif direction == 'D':
+            next_pos = (self.pos[0] + dist, self.pos[1])
+        else:
+            raise ValueError(f'invalid direction {direction}')
+
+        self.poly.append(next_pos)
+        self.pos = next_pos
+        self.perimeter += dist
+
+    def area(self):
+        assert len(self.poly) >= 3 and self.poly[0] == self.poly[-1], \
+            f'bad poly {len(self.poly)} {self.poly}'
+        return int(shoelace(self.poly)) + self.perimeter // 2 + 1
 
 
 def solve(data: str) -> tuple[int | str, int | str | None]:
-    total_dist = defaultdict(int)
-    dig_plan = []
+    poly_a = Poly()
+    poly_b = Poly()
+
     for ln in data.splitlines():
-        direction, dist, color = ln.split()
-        dist = int(dist)
-        total_dist[direction] += dist
-        dig_plan.append((direction, dist, color))
+        dir_a, dist_a, color = ln.split()
+        dist_a = int(dist_a)
 
-    width = total_dist['L'] + total_dist['R'] + 5
-    height = total_dist['U'] + total_dist['D'] + 5
-    start = (total_dist['U'] + 1, total_dist['L'] + 1)
+        dist_b = int(color[2:-2], 16)
+        dir_b = "RDLU"[int(color[-2])]
 
-    grid = [['.' for _ in range(width)] for _ in range(height)]
-    for (direction, dist, _) in dig_plan:
-        if direction == 'R':
-            for i in range(dist + 1):
-                grid[start[0]][start[1] + i] = '#'
-            start = (start[0], start[1] + dist)
-        elif direction == 'L':
-            for i in range(dist + 1):
-                grid[start[0]][start[1] - i] = '#'
-            start = (start[0], start[1] - dist)
-        elif direction == 'U':
-            for i in range(dist + 1):
-                grid[start[0] - i][start[1]] = '#'
-            start = (start[0] - dist, start[1])
-        elif direction == 'D':
-            for i in range(dist + 1):
-                grid[start[0] + i][start[1]] = '#'
-            start = (start[0] + dist, start[1])
+        poly_a.add(dir_a, dist_a)
+        poly_b.add(dir_b, dist_b)
 
-    flood_fill(grid, (0, 0), '?')
-    answer_a = width * height - sum(ln.count('?') for ln in grid)
-    return answer_a, None
+    answer_a = poly_a.area()
+    answer_b = poly_b.area()
+    return answer_a, answer_b
