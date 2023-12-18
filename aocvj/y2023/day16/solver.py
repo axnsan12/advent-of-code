@@ -1,6 +1,26 @@
-def trace_beam(grid: list[str]) -> int:
+def get_delta(direction) -> tuple[int, int]:
+    if direction == 'R':
+        dx, dy = 0, 1
+    elif direction == 'L':
+        dx, dy = 0, -1
+    elif direction == 'U':
+        dx, dy = -1, 0
+    elif direction == 'D':
+        dx, dy = 1, 0
+    else:
+        raise AssertionError(f'invalid direction {direction}')
+
+    return dx, dy
+
+
+def trace_beam(grid: list[str], starting_direction: str, starting_idx: int) -> int:
     light = [[0] * len(grid[0]) for _ in range(len(grid))]
-    sources = [(0, -1, 'R')]
+    sources = []
+    dx, dy = get_delta(starting_direction)
+    if dx == 0:
+        sources.append((starting_idx, -dy, starting_direction))
+    elif dy == 0:
+        sources.append((-dx, starting_idx, starting_direction))
 
     used_sources = set()
     while sources:
@@ -10,17 +30,7 @@ def trace_beam(grid: list[str]) -> int:
             continue
         used_sources.add(src)
 
-        if direction == 'R':
-            dx, dy = 0, 1
-        elif direction == 'L':
-            dx, dy = 0, -1
-        elif direction == 'U':
-            dx, dy = -1, 0
-        elif direction == 'D':
-            dx, dy = 1, 0
-        else:
-            raise AssertionError(f'invalid direction {direction}')
-
+        dx, dy = get_delta(direction)
         while True:
             row += dx
             col += dy
@@ -78,5 +88,14 @@ def trace_beam(grid: list[str]) -> int:
 
 def solve(data: str) -> tuple[int | str, int | str | None]:
     grid = [ln.strip() for ln in data.splitlines() if ln.strip()]
-    answer_a = trace_beam(grid)
-    return answer_a, None
+    answer_a = trace_beam(grid, 'R', 0)
+
+    answer_b = 0
+    for idx in range(len(grid)):
+        answer_b = max(answer_b, trace_beam(grid, 'R', idx))
+        answer_b = max(answer_b, trace_beam(grid, 'L', idx))
+    for idx in range(len(grid[0])):
+        answer_b = max(answer_b, trace_beam(grid, 'U', idx))
+        answer_b = max(answer_b, trace_beam(grid, 'D', idx))
+
+    return answer_a, answer_b
