@@ -1,6 +1,7 @@
 import dataclasses
 import operator
 import re
+from collections import defaultdict
 from typing import Callable
 
 
@@ -10,6 +11,9 @@ class Part:
     m: int
     a: int
     s: int
+
+
+uniq_conditions = defaultdict(set)
 
 
 def parse_condition(condition: str) -> Callable[[Part], bool]:
@@ -22,6 +26,7 @@ def parse_condition(condition: str) -> Callable[[Part], bool]:
         if op_str in condition:
             attr_name, value = condition.split(op_str)
             value = int(value)
+            uniq_conditions[attr_name].add(value)
             return lambda part: op_fn(getattr(part, attr_name), value)
 
     raise ValueError(f'unknown condition: {condition}')
@@ -54,6 +59,9 @@ def solve(data: str) -> tuple[int | str, int | str | None]:
             attrs[k] = int(v)
 
         parts.append(Part(**attrs))
+
+    for attr_name, values in uniq_conditions.items():
+        print(f'for {attr_name} there are {len(values)} uniq conditions')
 
     answer_a = 0
     for part in parts:
