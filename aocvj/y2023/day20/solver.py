@@ -1,7 +1,11 @@
 import collections
+import copy
 import dataclasses
+import itertools
 import re
 from collections import defaultdict
+
+from tqdm import tqdm
 
 
 class ModuleInterface:
@@ -53,7 +57,10 @@ class Conjunction(ModuleInterface):
 
 @dataclasses.dataclass
 class Sink(ModuleInterface):
+    state: bool
+
     def accept_input(self, sender: str, pulse: bool) -> bool:
+        self.state = pulse
         return False
 
     def emit_pulse(self):
@@ -95,7 +102,7 @@ def parse_graph(data: str) -> Circuit:
         module = modules.get(node)
         if module is None:
             print(f'dummy module: {node}')
-            modules[node] = Sink()
+            modules[node] = Sink(True)
             continue
         if isinstance(module, Conjunction):
             module.input_states = {s: False for s in parents}
@@ -134,15 +141,31 @@ def send_broadcast(circuit: Circuit):
 
 
 def solve(data: str) -> tuple[int | str, int | str | None]:
-    circuit = parse_graph(data)
-    print(circuit)
+    circuit_orig = parse_graph(data)
 
+    circuit_a = copy.deepcopy(circuit_orig)
     total_low = 0
     total_high = 0
     for _ in range(1000):
-        low, high = send_broadcast(circuit)
+        low, high = send_broadcast(circuit_a)
         total_low += low
         total_high += high
 
     answer_a = total_low * total_high
-    return answer_a, None
+
+    answer_b = 0
+    circuit_b = copy.deepcopy(circuit_orig)
+    rx = circuit_b.modules.get('rx') or circuit_b.modules.get('output')
+    if rx is not None:
+        assert isinstance(rx, Sink)
+
+        for idx in tqdm(itertools.count(1)):
+            send_broadcast(circuit_b)
+
+            if rx.state:
+                continue
+
+            answer_b = idx
+            break
+
+    return answer_a, answer_b
