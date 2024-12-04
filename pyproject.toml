@@ -10,6 +10,12 @@ build-backend = "hatchling.build"
 [tool.hatch.metadata.hooks.requirements_txt]
 files = ["requirements.txt"]
 
+[tool.hatch.build.targets.wheel]
+packages = ["aocvj"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [project.entry-points."adventofcode.user"]
 cvj = "aocvj.main:aocd_plugin"
 
