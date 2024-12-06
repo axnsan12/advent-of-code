@@ -46,6 +46,7 @@ def solve(data: str) -> tuple[int | str, int | str | None]:
         dependencies[b].append(a)
 
     answer_a = 0
+    answer_b = 0
     for update in lines:
         pages = list(map(int, update.split(',')))
         pages_set = set(pages)
@@ -63,5 +64,8 @@ def solve(data: str) -> tuple[int | str, int | str | None]:
         if sorted_pages == filtered_pages:
             mid = len(pages) // 2
             answer_a += pages[mid]
+        else:
+            mid = len(sorted_pages) // 2
+            answer_b += sorted_pages[mid]
 
-    return answer_a, None
+    return answer_a, answer_b
