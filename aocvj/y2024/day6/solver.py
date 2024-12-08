@@ -1,4 +1,7 @@
 import copy
+from collections import defaultdict
+
+from tqdm import tqdm
 
 DIRECTIONS = [(-1, 0), (0, 1), (1, 0), (0, -1)]
 
@@ -26,17 +29,35 @@ def get_next_direction(grid: list[list[str]], row: int, col: int, direction: int
     raise AssertionError("Dead end??")
 
 
-def solve(data: str) -> tuple[int | str, int | str | None]:
-    grid = [list(line) for line in data.splitlines(keepends=False)]
-    row, col = find_guard(grid)
+def find_path(grid: list[list[str]], row: int, col: int) -> int | None:
+    length = 0
+    visited = defaultdict(list)
     direction = 0
-    answer_a = 0
     while True:
-        answer_a += (grid[row][col] != 'X')
-        grid[row][col] = 'X'
+        length += ((row, col) not in visited)
         direction = get_next_direction(grid, row, col, direction)
         if direction is None:
-            break
+            return length
+        visited_directions = visited[(row, col)]
+        if direction in visited_directions:
+            return None
+        visited_directions.append(direction)
         row, col = row + DIRECTIONS[direction][0], col + DIRECTIONS[direction][1]
 
-    return answer_a, None
+
+def solve(data: str) -> tuple[int | str, int | str | None]:
+    grid = [list(line) for line in data.splitlines(keepends=False)]
+    start_row, start_col = find_guard(grid)
+    answer_a = find_path(grid, start_row, start_col)
+    answer_b = 0
+
+    with tqdm(total=len(grid) * len(grid[0])) as pbar:
+        for row in range(len(grid)):
+            for col in range(len(grid[row])):
+                pbar.update(1)
+                if grid[row][col] == '.':
+                    grid[row][col] = "#"
+                    length = find_path(grid, start_row, start_col)
+                    answer_b += length is None
+                    grid[row][col] = "."
+    return answer_a, answer_b
