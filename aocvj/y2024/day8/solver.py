@@ -18,15 +18,23 @@ def solve(data: str) -> tuple[int | str, int | str | None]:
             if grid[row][col] != '.':
                 antennas_by_type[grid[row][col]].append((row, col))
 
-    antinodes = set()
+    antinodes_a = set()
+    antinodes_b = set()
     for antenna_type, antennas in antennas_by_type.items():
         for a, b in itertools.combinations(antennas, 2):
             row_d = a[0] - b[0]
             col_d = a[1] - b[1]
-            antinodes.add((a[0] + row_d, a[1] + col_d))
-            antinodes.add((b[0] - row_d, b[1] - col_d))
+            antinodes_a.add((a[0] + row_d, a[1] + col_d))
+            antinodes_a.add((b[0] - row_d, b[1] - col_d))
+
+            for sign in (-1, 1):
+                row, col = a
+                while grid_set(grid, row, col, '#'):
+                    antinodes_b.add((row, col))
+                    row += sign * row_d
+                    col += sign * col_d
 
     answer_a = 0
-    for row, col in antinodes:
+    for row, col in antinodes_a:
         answer_a += grid_set(grid, row, col, '#')
-    return answer_a, None
+    return answer_a, len(antinodes_b)
